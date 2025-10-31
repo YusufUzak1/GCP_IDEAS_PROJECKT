@@ -1,0 +1,72 @@
+# Bu workflow'un adı
+name: Deploy Idea Board to Cloud Run
+
+# Tetikleyici: Sadece "main" dalına "push" yapıldığında çalışır
+on:
+  push:
+    branches:
+      - main
+
+# Ortam değişkenleri: Tüm adımlarda kullanılacak
+env:
+  # Sizin Proje ID'niz (değişmedi)
+  PROJECT_ID: benim-devops-projem-12345
+  # Sizin Bölgeniz (değişmedi)
+  REGION: europe-west10
+  # YENİ Artifact Registry depo adımız
+  REPO_NAME: idea-board-repo
+  # YENİ Cloud Run servis adımız
+  SERVICE_NAME: idea-board-service
+
+jobs:
+  deploy:
+    # Bu işin çalışacağı sanal makine
+    runs-on: ubuntu-latest
+
+    # İzinler: GitHub Actions'a WIF için OIDC token oluşturma izni verir
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    steps:
+      # 1. Adım: Kodu (GitHub deposunu) sanal makineye indir
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Adım: Google Cloud'da güvenli bir şekilde oturum aç (WIF)
+      - name: Authenticate to Google Cloud
+        uses: 'google-github-actions/auth@v2'
+        with:
+          # GitHub Secrets bilgileri (Adım 5.3'te ekledik)
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT_EMAIL }}
+
+      # 3. Adım: gcloud (Google Cloud CLI) aracını kur
+      - name: Setup Google Cloud SDK
+        uses: 'google-github-actions/setup-gcloud@v2'
+
+      # 4. Adım: Docker'ı Artifact Registry'ye bağlanması için ayarla
+      - name: Configure Docker
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev
+
+      # 5. Adım: Dockerfile'dan imajı oluştur (Build)
+      - name: Build Docker Image
+        run: |-
+          docker build \
+            --tag ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}:latest \
+            .
+
+      # 6. Adım: Docker imajını Artifact Registry'ye it (Push)
+      - name: Push Docker Image
+        run: |-
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}:latest
+
+      # 7. Adım: Docker imajını Cloud Run'a dağıt (Deploy)
+      # Bu adımda Firestore'a otomatik olarak bağlanacak (çünkü IAM izni verdik)
+      - name: Deploy to Cloud Run
+        run: |-
+          gcloud run deploy ${{ env.SERVICE_NAME }} \
+            --image=${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.SERVICE_NAME }}:latest \
+            --region=${{ env.REGION }} \
+            --platform=managed \
+            --allow-unauthenticated
