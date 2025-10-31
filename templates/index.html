@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dinamik Fikir Panosu</title>
+    <!-- DÜZELTME BURADA: Flask'ın 'static' klasörünü bulması için 'url_for' kullanıldı -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <!-- Arka Plan Efektleri -->
+    <div class="bg-animation">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
+    <!-- Başlık Alanı -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-container">
+                    <div class="logo-icon">💡</div>
+                    <div class="logo-glow"></div>
+                </div>
+                <h1 class="glowing-text">Dinamik Fikir Panosu</h1>
+                <p class="subtitle">Fikirlerinizi özgürce paylaşın, ilham verin ve ilham alın</p>
+                <div class="header-divider"></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Ana İçerik -->
+    <main class="container">
+        <!-- Fikir Ekleme Formu -->
+        <section class="form-section">
+            <div class="form-card">
+                <div class="form-header">
+                    <h2>✨ Yeni Fikir Ekle</h2>
+                    <p>Düşüncelerinizi dünya ile paylaşın</p>
+                </div>
+                <!-- Bu form 'app.py'deki /add_idea rotasıyla konuşacak -->
+                <form action="/add_idea" method="POST">
+                    <div class="input-group">
+                        <!-- Bu textarea'nın 'name' özelliği 'app.py' ile eşleşiyor -->
+                        <textarea 
+                            name="idea_text" 
+                            placeholder="Muhteşem fikrinizi buraya yazın..." 
+                            rows="5" 
+                            required
+                            maxlength="500"
+                        ></textarea>
+                        <span class="input-border"></span>
+                    </div>
+                    <button type="submit" class="submit-btn">
+                        <span class="btn-content">
+                            <span class="btn-text">Fikri Paylaş</span>
+                            <svg class="btn-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
+                        </span>
+                        <span class="btn-glow"></span>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Fikir Panosu -->
+        <section class="pano-section">
+            <div class="section-header">
+                <h2 class="pano-title">
+                    <span class="title-icon">🎯</span>
+                    Tüm Fikirler
+                    <span class="title-decoration"></span>
+                </h2>
+                <p class="pano-subtitle">Topluluk tarafından paylaşılan yaratıcı fikirler</p>
+            </div>
+            
+            <div class="pano">
+                <!-- 
+                  Bu Jinja2 döngüsü, 'app.py'den gelen 'ideas' listesindeki
+                  her bir 'idea' için bir kart oluşturur.
+                -->
+                {% for idea in ideas %}
+                <div class="kart" style="animation-delay: {{ loop.index0 * 0.1 }}s">
+                    <div class="kart-shine"></div>
+                    <div class="kart-content">
+                        <div class="quote-mark">"</div>
+                        <!-- 'idea.text' veritabanından gelen fikrin metnidir -->
+                        <p>{{ idea.text }}</p>
+                    </div>
+                    <div class="kart-footer">
+                        <div class="kart-badge">
+                            <span class="badge-icon">💭</span>
+                            <span class="badge-text">Fikir</span>
+                        </div>
+                        <div class="kart-number">#{{ loop.index }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- 
+              Bu 'if' bloğu, 'app.py'den gelen 'ideas' listesi boşsa
+              kullanıcıya özel bir mesaj gösterir.
+            -->
+            {% if not ideas %}
+            <div class="empty-state">
+                <div class="empty-animation">
+                    <div class="empty-icon">🚀</div>
+                    <div class="empty-rings">
+                        <div class="ring ring-1"></div>
+                        <div class="ring ring-2"></div>
+                        <div class="ring ring-3"></div>
+                    </div>
+                </div>
+                <h3>Henüz Hiç Fikir Yok!</h3>
+                <p>İlk fikri paylaşarak bu yolculuğu başlatan kişi siz olun</p>
+            </div>
+            {% endif %}
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <h3>Anonim Fikir Paylaşım Platformu</h3>
+                    <p>Her fikir değerlidir, her düşünce önemlidir</p>
+                </div>
+                <div class="footer-stats">
+                    <div class="stat-item">
+                        <span class="stat-icon">💡</span>
+                        <span class="stat-label">Sınırsız Hayal Gücü</span>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>© 2024 Dinamik Fikir Panosu - Tüm Hakları Saklıdır</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
